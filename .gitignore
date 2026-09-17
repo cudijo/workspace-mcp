@@ -1,3 +1,7 @@
 node_modules/
 .DS_Store
 tokens.json
+
+# OAuth client secret — downloaded from GCP, must never be committed.
+client_secret_*.json
+*.apps.googleusercontent.com.json
