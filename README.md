@@ -150,8 +150,42 @@ Override the path with the `GOOGLE_MCP_CONFIG` env var.
 | `gmail_create_draft` | Create a draft email |
 | `calendar_list_events` | List upcoming events |
 | `calendar_get_event` | Get a specific event's details |
+| `list_chat_spaces` | List Chat spaces, group chats and DMs |
+| `search_chat_messages` | Search or browse Chat messages across spaces |
+| `send_chat_message` | Post a message to a Chat space (**writes**) |
+| `drive_list_files` | List or search Drive files, incl. shared drives |
+| `drive_get_changes` | Drive change feed since a stored watermark |
+| `drive_read_file` | Read a file's contents as text (Docs/Sheets/Slides export) |
+| `drive_create_folder` | Create a folder (**writes**) |
+| `drive_upload_file` | Create a file, optionally converting markdown to a Doc (**writes**) |
+| `drive_update_file` | Update a file in place, keeping its ID and URL (**writes**) |
+| `drive_list_comments` | List comment threads on a file (unresolved by default) |
+| `drive_get_activity` | Who edited / commented / renamed / shared, with actors |
+| `directory_lookup_people` | Resolve Workspace people by id, search, or list all |
+| `meet_list_conference_records` | Past Meet conferences and actual attendance |
+| `meet_get_transcript` | Meet transcript, when transcription was enabled |
+| `list_chat_members` | Members of a Chat space, group chat or DM |
 
 All tools accept an optional `account: "email@domain.com"` parameter.
+
+### Drive notes
+
+`drive_get_changes` is the tool for "what changed since last time": call it with no
+`pageToken` to get a watermark, store that, and pass it back later. It is far cheaper
+and more complete than polling `modifiedTime` via `drive_list_files`.
+
+Drive writes use the `drive.file` scope, so this server can only modify files and
+folders **it created itself** — existing Drive content is readable but not writable.
+
+`drive_list_comments` needs no scope beyond `drive.readonly`.
+
+### Required Google APIs
+
+Enable these in the same GCP project as your OAuth client:
+Gmail, Google Calendar, Google Chat, Google Drive, **Drive Activity**, **People**,
+and **Google Meet**. A missing API shows up as `403 ... has not been used in project
+... or it is disabled`, which is distinct from `403 Request had insufficient
+authentication scopes` (that one means re-run `setup.js`).
 
 ---
 

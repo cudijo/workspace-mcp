@@ -1,7 +1,7 @@
 {
   "name": "google-mcp",
-  "version": "2.0.1",
-  "description": "Gmail + Google Calendar for any Google account. No gcloud required — uses OAuth2 refresh tokens stored locally. Supports multiple accounts simultaneously.",
+  "version": "2.3.0",
+  "description": "Gmail + Google Calendar + Google Chat + Google Drive + Meet + Workspace directory for any Google account. No gcloud required \u2014 uses OAuth2 refresh tokens stored locally. Supports multiple accounts simultaneously.",
   "author": "Charlie Graham / Second Coffee",
   "tools": [
     {
@@ -23,6 +23,66 @@
     {
       "name": "calendar_get_event",
       "description": "Get a calendar event's full details"
+    },
+    {
+      "name": "list_chat_spaces",
+      "description": "List Google Chat spaces, group chats and DMs"
+    },
+    {
+      "name": "search_chat_messages",
+      "description": "Search or browse Google Chat messages across spaces"
+    },
+    {
+      "name": "send_chat_message",
+      "description": "Post a message to a Google Chat space (writes)"
+    },
+    {
+      "name": "drive_list_files",
+      "description": "List or search Drive files, including shared drives"
+    },
+    {
+      "name": "drive_get_changes",
+      "description": "Drive change feed since a stored watermark"
+    },
+    {
+      "name": "drive_read_file",
+      "description": "Read a Drive file's contents as text (Docs export)"
+    },
+    {
+      "name": "drive_create_folder",
+      "description": "Create a Drive folder (writes)"
+    },
+    {
+      "name": "drive_upload_file",
+      "description": "Create a Drive file, optionally converting markdown to a Google Doc (writes)"
+    },
+    {
+      "name": "drive_update_file",
+      "description": "Update a Drive file in place, keeping its ID and URL (writes)"
+    },
+    {
+      "name": "drive_list_comments",
+      "description": "List comment threads on a Drive file"
+    },
+    {
+      "name": "drive_get_activity",
+      "description": "Drive Activity: who edited/commented/renamed/shared, with actors"
+    },
+    {
+      "name": "directory_lookup_people",
+      "description": "Resolve Workspace people by id, search, or list the directory"
+    },
+    {
+      "name": "meet_list_conference_records",
+      "description": "Past Meet conferences and who actually attended"
+    },
+    {
+      "name": "meet_get_transcript",
+      "description": "Transcript of a past Meet conference, if transcription was on"
+    },
+    {
+      "name": "list_chat_members",
+      "description": "List members of a Chat space, group chat or DM"
     }
   ]
 }

@@ -43,6 +43,21 @@ const SCOPES = [
   "https://www.googleapis.com/auth/gmail.modify",
   "https://www.googleapis.com/auth/calendar",
   "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/chat.spaces.readonly",
+  "https://www.googleapis.com/auth/chat.messages.readonly",
+  "https://www.googleapis.com/auth/chat.messages.create",
+  // Drive: read everything the user can already see (needed to digest meeting
+  // notes and shared-drive activity); write only files this app itself created.
+  "https://www.googleapis.com/auth/drive.readonly",
+  "https://www.googleapis.com/auth/drive.file",
+  // Drive Activity: who did what to a file (edit/comment/rename/share), with actors.
+  "https://www.googleapis.com/auth/drive.activity.readonly",
+  // Chat memberships: name the DM/group spaces, which have no displayName.
+  "https://www.googleapis.com/auth/chat.memberships.readonly",
+  // Workspace directory: resolve people/<id> actors and join identities across tools.
+  "https://www.googleapis.com/auth/directory.readonly",
+  // Meet: attendance and (where transcription is enabled) transcripts.
+  "https://www.googleapis.com/auth/meetings.space.readonly",
 ].join(" ");
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
