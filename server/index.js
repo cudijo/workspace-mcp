@@ -170,6 +170,16 @@ function handleRawResponse(res, data, resolve, reject) {
  *                    uploads); otherwise `body` is JSON-encoded.
  * opts.raw         — resolve with the response body as a string, unparsed.
  */
+// Binary bodies are returned as a Buffer, so the caller decides how to encode.
+function handleBinaryResponse(res, buf, resolve, reject) {
+  if (res.statusCode < 200 || res.statusCode >= 300) {
+    let msg = buf.toString("utf8").slice(0, 300);
+    try { msg = JSON.parse(msg)?.error?.message || msg; } catch { /* keep raw */ }
+    return reject(new Error(`Google API ${res.statusCode}: ${msg}`));
+  }
+  resolve(buf);
+}
+
 function apiRequest(method, token, host, path, body, opts = {}) {
   return new Promise((resolve, reject) => {
     const headers = { Authorization: `Bearer ${token}` };
@@ -185,13 +195,19 @@ function apiRequest(method, token, host, path, body, opts = {}) {
       headers["Content-Length"] = payload.length;
     }
     const req = httpsRequest({ hostname: host, path, method, headers }, (res) => {
-      let data = "";
-      res.on("data", (c) => (data += c));
-      res.on("end", () =>
-        opts.raw
-          ? handleRawResponse(res, data, resolve, reject)
-          : handleApiResponse(res, data, resolve, reject)
-      );
+      // Collect Buffers, never a string. `data += chunk` decodes each chunk as
+      // UTF-8 and silently corrupts any binary body -- which is what Drive's
+      // alt=media returns for .docx, .pptx and .pdf.
+      const chunks = [];
+      res.on("data", (c) => chunks.push(c));
+      res.on("end", () => {
+        const buf = Buffer.concat(chunks);
+        if (opts.binary) return handleBinaryResponse(res, buf, resolve, reject);
+        const text = buf.toString("utf8");
+        return opts.raw
+          ? handleRawResponse(res, text, resolve, reject)
+          : handleApiResponse(res, text, resolve, reject);
+      });
     });
     req.on("error", reject);
     if (payload) req.write(payload);
@@ -201,6 +217,7 @@ function apiRequest(method, token, host, path, body, opts = {}) {
 
 const apiGet = (token, host, path) => apiRequest("GET", token, host, path);
 const apiGetRaw = (token, host, path) => apiRequest("GET", token, host, path, null, { raw: true });
+const apiGetBinary = (token, host, path) => apiRequest("GET", token, host, path, null, { binary: true });
 const apiPost = (token, host, path, body) => apiRequest("POST", token, host, path, body);
 const apiPatch = (token, host, path, body) => apiRequest("PATCH", token, host, path, body);
 
@@ -562,6 +579,14 @@ function allDriveParams(params) {
   return params;
 }
 
+// Treat as text when the type says so, or when the first bytes contain no NULs.
+function isProbablyText(mimeType, buf) {
+  const mt = mimeType || "";
+  if (mt.startsWith("text/") || /json|xml|csv|javascript|markdown/.test(mt)) return true;
+  if (/^(image|audio|video|font)\//.test(mt) || /pdf|zip|officedocument|msword|ms-excel|ms-powerpoint|octet-stream/.test(mt)) return false;
+  return !buf.subarray(0, 4096).includes(0);
+}
+
 const GOOGLE_EXPORT_MIME = {
   "application/vnd.google-apps.document": "text/plain",
   "application/vnd.google-apps.spreadsheet": "text/csv",
@@ -647,10 +672,27 @@ async function driveReadFile({ fileId, mimeType, maxChars = 200000, account }) {
       `/drive/v3/files/${encodeURIComponent(fileId)}/export?mimeType=${encodeURIComponent(exportMime)}`
     );
   } else {
-    text = await apiGetRaw(
+    // Non-Google file: fetch as bytes. Text-ish types decode normally; anything
+    // binary is returned base64-encoded rather than as mojibake, because this
+    // server has no dependencies and therefore no way to extract text from a
+    // .docx, .pptx or .pdf.
+    const buf = await apiGetBinary(
       token, DRIVE_HOST,
       `/drive/v3/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`
     );
+    if (isProbablyText(meta.mimeType, buf)) {
+      text = buf.toString("utf8");
+    } else {
+      return {
+        fileId: meta.id, name: meta.name, mimeType: meta.mimeType,
+        modifiedTime: meta.modifiedTime, webViewLink: meta.webViewLink,
+        encoding: "base64", bytes: buf.length,
+        truncated: buf.length > maxChars,
+        note: "Binary file. Returned base64-encoded: this server cannot extract "
+              + "text from it. Decode the bytes, or open webViewLink.",
+        data: buf.subarray(0, maxChars).toString("base64"),
+      };
+    }
   }
 
   const truncated = text.length > maxChars;
